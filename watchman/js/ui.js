@@ -4,6 +4,11 @@ const els = {
   name: /** @type {HTMLInputElement} */(document.getElementById('taskName')),
   addBtn: document.getElementById('addTaskBtn'),
   list: document.getElementById('taskList'),
+  archiveList: document.getElementById('archiveList'),
+  tabActive: document.getElementById('tabActive'),
+  tabArchive: document.getElementById('tabArchive'),
+  panelActive: document.getElementById('panelActive'),
+  panelArchive: document.getElementById('panelArchive'),
   np: document.getElementById('nowPlaying'),
   npTitle: document.getElementById('npTitle'),
   npElapsed: document.getElementById('npElapsed'),
@@ -16,9 +21,9 @@ let manager = TaskManager.revive(saved);
 manager.storage = storage; // bind real storage
 
 function render() {
-  // list
+  // active list
   els.list.innerHTML = '';
-  for (const t of manager.tasks) {
+  for (const t of manager.activeTasks) {
     const li = document.createElement('li');
     li.className = 'task-item';
     li.dataset.id = t.id;
@@ -39,22 +44,45 @@ function render() {
     toggle.textContent = t.isRunning ? 'Pause' : 'Start';
     toggle.addEventListener('click', () => onToggle(t.id));
 
-    const reset = document.createElement('button');
-    reset.className = 'btn danger';
-    reset.textContent = 'Reset';
-    reset.addEventListener('click', () => onReset(t.id));
+    const archive = document.createElement('button');
+    archive.className = 'btn';
+    archive.textContent = 'Archive';
+    archive.addEventListener('click', () => onArchive(t.id));
 
-    const remove = document.createElement('button');
-    remove.className = 'btn';
-    remove.textContent = 'Delete';
-    remove.addEventListener('click', () => onDelete(t.id));
-
-    actions.append(toggle, reset, remove);
+    actions.append(toggle, archive);
     li.append(title, elapsed, actions);
     els.list.appendChild(li);
   }
 
   renderFooter();
+
+  // archive list
+  els.archiveList.innerHTML = '';
+  for (const t of manager.archivedTasks) {
+    const li = document.createElement('li');
+    li.className = 'task-item';
+    li.dataset.id = t.id;
+
+    const title = document.createElement('div');
+    title.className = 'task-title';
+    title.textContent = t.title;
+
+    const elapsed = document.createElement('div');
+    elapsed.className = 'task-time';
+    elapsed.textContent = formatHMS(t.elapsed());
+
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    const del = document.createElement('button');
+    del.className = 'btn';
+    del.textContent = 'Delete';
+    del.addEventListener('click', () => onDelete(t.id));
+
+    actions.append(del);
+    li.append(title, elapsed, actions);
+    els.archiveList.appendChild(li);
+  }
 }
 
 function renderFooter() {
@@ -87,16 +115,13 @@ function onToggle(id) {
   render();
 }
 
-function onReset(id) {
-  const t = manager.getById(id);
-  if (!t) return;
-  t.reset();
-  manager.persist();
+function onDelete(id) {
+  manager.remove(id);
   render();
 }
 
-function onDelete(id) {
-  manager.remove(id);
+function onArchive(id) {
+  manager.archive(id);
   render();
 }
 
@@ -112,6 +137,20 @@ els.npToggle.addEventListener('click', () => {
 els.addBtn.addEventListener('click', onAdd);
 els.name.addEventListener('keydown', (e) => {
   if (e.key === 'Enter') onAdd();
+});
+
+// Tabs
+els.tabActive.addEventListener('click', () => {
+  els.tabActive.classList.add('active');
+  els.tabArchive.classList.remove('active');
+  els.panelActive.classList.remove('hidden');
+  els.panelArchive.classList.add('hidden');
+});
+els.tabArchive.addEventListener('click', () => {
+  els.tabArchive.classList.add('active');
+  els.tabActive.classList.remove('active');
+  els.panelArchive.classList.remove('hidden');
+  els.panelActive.classList.add('hidden');
 });
 
 // Tick every second for elapsed updates

@@ -6,6 +6,7 @@ export class Task {
     this.id = id;
     this.title = title;
     this.intervals = []; // [{start: number, end?: number}]
+    this.archived = false;
   }
 
   get isRunning() {
@@ -66,10 +67,14 @@ export class TaskManager {
 
   getById(id) { return this.tasks.find(t => t.id === id) || null; }
 
+  get activeTasks() { return this.tasks.filter(t => !t.archived); }
+  get archivedTasks() { return this.tasks.filter(t => t.archived); }
+
   // Ensure only one running at a time (like a media player)
   toggleRun(id) {
     const target = this.getById(id);
     if (!target) return;
+    if (target.archived) return; // cannot run archived tasks
 
     if (target.isRunning) {
       target.pause();
@@ -84,11 +89,24 @@ export class TaskManager {
     return target;
   }
 
+  // Archive a task: stop all timers and move task to archived
+  archive(id) {
+    const target = this.getById(id);
+    if (!target) return;
+    // Stop all running timers
+    for (const t of this.tasks) if (t.isRunning) t.pause();
+    this.activeTaskId = null;
+    // Mark archived
+    target.archived = true;
+    this.persist();
+    return target;
+  }
+
   tick() { /* marker for UI to re-render elapsed */ }
 
   serialize() {
     return {
-      tasks: this.tasks.map(t => ({ id: t.id, title: t.title, intervals: t.intervals })),
+      tasks: this.tasks.map(t => ({ id: t.id, title: t.title, intervals: t.intervals, archived: !!t.archived })),
       activeTaskId: this.activeTaskId,
     };
   }
@@ -103,6 +121,7 @@ export class TaskManager {
     for (const raw of data.tasks || []) {
       const t = new Task(raw.id, raw.title);
       t.intervals = (raw.intervals || []).map(itv => ({ start: itv.start, end: itv.end ?? undefined }));
+      t.archived = !!raw.archived;
       mgr.tasks.push(t);
     }
     mgr.activeTaskId = data.activeTaskId || null;

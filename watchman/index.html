@@ -18,8 +18,16 @@
       <button id="addTaskBtn" class="btn primary">Add Task</button>
     </section>
 
-    <section>
+    <section class="tabs">
+      <button id="tabActive" class="tab active" aria-controls="panelActive" aria-selected="true">Active</button>
+      <button id="tabArchive" class="tab" aria-controls="panelArchive" aria-selected="false">Archive</button>
+    </section>
+
+    <section id="panelActive" role="tabpanel">
       <ul id="taskList" class="task-list"></ul>
+    </section>
+    <section id="panelArchive" role="tabpanel" class="hidden">
+      <ul id="archiveList" class="task-list"></ul>
     </section>
   </main>
 
