@@ -109,6 +109,15 @@ export class TaskManager {
     return target;
   }
 
+  // Unarchive a task: bring it back to active list
+  unarchive(id) {
+    const target = this.getById(id);
+    if (!target) return;
+    target.archived = false;
+    this.persist();
+    return target;
+  }
+
   tick() { /* marker for UI to re-render elapsed */ }
 
   serialize() {

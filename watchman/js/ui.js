@@ -111,12 +111,17 @@ function render() {
     const actions = document.createElement('div');
     actions.className = 'task-actions';
 
+    const unarch = document.createElement('button');
+    unarch.className = 'btn';
+    unarch.textContent = 'Unarchive';
+    unarch.addEventListener('click', () => onUnarchive(t.id));
+
     const del = document.createElement('button');
-    del.className = 'btn';
+    del.className = 'btn danger';
     del.textContent = 'Delete';
     del.addEventListener('click', () => onDelete(t.id));
 
-    actions.append(del);
+    actions.append(unarch, del);
     li.append(titleWrap, elapsed, actions);
     els.archiveList.appendChild(li);
   }
@@ -159,6 +164,11 @@ function onDelete(id) {
 
 function onArchive(id) {
   manager.archive(id);
+  render();
+}
+
+function onUnarchive(id) {
+  manager.unarchive(id);
   render();
 }
 
