@@ -22,6 +22,75 @@ let manager = TaskManager.revive(saved);
 manager.storage = storage; // bind real storage
 let selectedTag = null;
 
+// Media Session support for OS-level play/pause notification
+const mediaCtrl = {
+  audio: null,
+  activeTaskId: null,
+};
+
+function makeNoiseWavDataUri(durationSec = 0.5, sampleRate = 8000) {
+  const channels = 1;
+  const bytesPerSample = 1; // 8-bit PCM
+  const frames = Math.floor(durationSec * sampleRate);
+  const dataSize = frames * channels * bytesPerSample;
+  const buffer = new Uint8Array(44 + dataSize);
+  const view = new DataView(buffer.buffer);
+  const writeStr = (off, s) => { for (let i = 0; i < s.length; i++) buffer[off + i] = s.charCodeAt(i); };
+  const write32 = (off, v) => view.setUint32(off, v, true);
+  const write16 = (off, v) => view.setUint16(off, v, true);
+  // RIFF/WAVE header
+  writeStr(0, 'RIFF'); write32(4, 36 + dataSize); writeStr(8, 'WAVE');
+  writeStr(12, 'fmt '); write32(16, 16); write16(20, 1); write16(22, channels);
+  write32(24, sampleRate); write32(28, sampleRate * channels * bytesPerSample);
+  write16(32, channels * bytesPerSample); write16(34, 8 * bytesPerSample);
+  writeStr(36, 'data'); write32(40, dataSize);
+  // noise data 0..255
+  let off = 44;
+  for (let i = 0; i < frames; i++) buffer[off++] = Math.floor(Math.random() * 256);
+  let bin = '';
+  for (let i = 0; i < buffer.length; i++) bin += String.fromCharCode(buffer[i]);
+  return `data:audio/wav;base64,${btoa(bin)}`;
+}
+
+async function ensureMediaAudio() {
+  if (mediaCtrl.audio) return mediaCtrl.audio;
+  const el = new Audio();
+  el.src = makeNoiseWavDataUri();
+  el.loop = true;
+  el.preload = 'auto';
+  el.volume = 0.0; // will raise slightly when playing
+  mediaCtrl.audio = el;
+  return el;
+}
+
+function setupMediaSessionHandlers() {
+  if (!('mediaSession' in navigator)) return;
+  navigator.mediaSession.setActionHandler('play', () => {
+    const id = manager.activeTaskId;
+    if (!id) return;
+    const t = manager.getById(id);
+    if (t && !t.isRunning) onToggle(id);
+  });
+  navigator.mediaSession.setActionHandler('pause', () => {
+    const id = manager.activeTaskId;
+    if (!id) return;
+    const t = manager.getById(id);
+    if (t && t.isRunning) onToggle(id);
+  });
+}
+
+function updateMediaSession(task, isPlaying) {
+  if (!('mediaSession' in navigator)) return;
+  try {
+    navigator.mediaSession.metadata = new MediaMetadata({
+      title: task?.title || 'Watchman',
+      artist: 'Task',
+      album: 'Watchman',
+    });
+    navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
+  } catch {}
+}
+
 function render() {
   // filter bar
   renderFilter();
@@ -131,17 +200,39 @@ function renderFooter() {
   const id = manager.activeTaskId;
   if (!id) {
     els.np.classList.add('hidden');
+    // stop media session if any
+    if (mediaCtrl.audio) {
+      mediaCtrl.audio.pause();
+      updateMediaSession(null, false);
+    }
     return;
   }
   const t = manager.getById(id);
   if (!t) {
     els.np.classList.add('hidden');
+    if (mediaCtrl.audio) {
+      mediaCtrl.audio.pause();
+      updateMediaSession(null, false);
+    }
     return;
   }
   els.np.classList.remove('hidden');
   els.npTitle.textContent = t.title;
   els.npElapsed.textContent = formatHMS(t.elapsed());
   els.npToggle.textContent = t.isRunning ? 'Pause' : 'Resume';
+
+  // Media session sync
+  setupMediaSessionHandlers();
+  ensureMediaAudio().then(audio => {
+    if (t.isRunning) {
+      audio.volume = 0.001; // very low
+      audio.play().catch(() => {});
+    } else {
+      audio.volume = 0.0;
+      audio.pause();
+    }
+    updateMediaSession(t, t.isRunning);
+  });
 }
 
 function onAdd() {
