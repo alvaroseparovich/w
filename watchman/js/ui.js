@@ -66,10 +66,13 @@ async function ensureMediaAudio() {
 function setupMediaSessionHandlers() {
   if (!('mediaSession' in navigator)) return;
   navigator.mediaSession.setActionHandler('play', () => {
-    const id = manager.activeTaskId;
+    // If there is an active task, resume if paused; otherwise resume the last active task
+    let id = manager.activeTaskId;
+    if (!id && mediaCtrl.activeTaskId) id = mediaCtrl.activeTaskId;
     if (!id) return;
     const t = manager.getById(id);
-    if (t && !t.isRunning) onToggle(id);
+    if (!t) return;
+    if (!t.isRunning) onToggle(id);
   });
   navigator.mediaSession.setActionHandler('pause', () => {
     const id = manager.activeTaskId;
@@ -84,7 +87,7 @@ function updateMediaSession(task, isPlaying) {
   try {
     navigator.mediaSession.metadata = new MediaMetadata({
       title: task?.title || 'Watchman',
-      artist: 'Task',
+      artist: 'Task Handler',
       album: 'Watchman',
     });
     navigator.mediaSession.playbackState = isPlaying ? 'playing' : 'paused';
@@ -216,6 +219,8 @@ function renderFooter() {
     }
     return;
   }
+  // Remember last active task for OS play handler
+  mediaCtrl.activeTaskId = t.id;
   els.np.classList.remove('hidden');
   els.npTitle.textContent = t.title;
   els.npElapsed.textContent = formatHMS(t.elapsed());
@@ -224,11 +229,10 @@ function renderFooter() {
   // Media session sync
   setupMediaSessionHandlers();
   ensureMediaAudio().then(audio => {
+    audio.volume = 0.0;
     if (t.isRunning) {
-      audio.volume = 0.001; // very low
-      audio.play().catch(() => {});
+      audio.play().catch((e) => {console.log(e)});
     } else {
-      audio.volume = 0.0;
       audio.pause();
     }
     updateMediaSession(t, t.isRunning);
