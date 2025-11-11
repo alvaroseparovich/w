@@ -28,9 +28,35 @@ function render() {
     li.className = 'task-item';
     li.dataset.id = t.id;
 
+    const titleWrap = document.createElement('div');
     const title = document.createElement('div');
     title.className = 'task-title';
     title.textContent = t.title;
+
+    const tags = document.createElement('div');
+    tags.className = 'tags';
+    for (const tag of t.tags || []) {
+      tags.appendChild(renderTagChip(t.id, tag));
+    }
+
+    const addWrap = document.createElement('div');
+    addWrap.style.marginTop = '6px';
+    const tagInput = document.createElement('input');
+    tagInput.placeholder = 'Add tag…';
+    tagInput.className = 'input-tag';
+    tagInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const v = tagInput.value.trim();
+        if (v) {
+          manager.addTag(t.id, v);
+          tagInput.value = '';
+          render();
+        }
+      }
+    });
+    addWrap.append(tagInput);
+
+    titleWrap.append(title, tags, addWrap);
 
     const elapsed = document.createElement('div');
     elapsed.className = 'task-time';
@@ -50,7 +76,7 @@ function render() {
     archive.addEventListener('click', () => onArchive(t.id));
 
     actions.append(toggle, archive);
-    li.append(title, elapsed, actions);
+    li.append(titleWrap, elapsed, actions);
     els.list.appendChild(li);
   }
 
@@ -63,9 +89,14 @@ function render() {
     li.className = 'task-item';
     li.dataset.id = t.id;
 
+    const titleWrap = document.createElement('div');
     const title = document.createElement('div');
     title.className = 'task-title';
     title.textContent = t.title;
+    const tags = document.createElement('div');
+    tags.className = 'tags';
+    for (const tag of t.tags || []) tags.appendChild(renderTagChip(t.id, tag, true));
+    titleWrap.append(title, tags);
 
     const elapsed = document.createElement('div');
     elapsed.className = 'task-time';
@@ -80,7 +111,7 @@ function render() {
     del.addEventListener('click', () => onDelete(t.id));
 
     actions.append(del);
-    li.append(title, elapsed, actions);
+    li.append(titleWrap, elapsed, actions);
     els.archiveList.appendChild(li);
   }
 }
@@ -168,5 +199,23 @@ setInterval(() => {
     if (t) els.npElapsed.textContent = formatHMS(t.elapsed());
   }
 }, 1000);
+
+function renderTagChip(taskId, tag, archived = false) {
+  const chip = document.createElement('span');
+  chip.className = 'tag';
+  chip.textContent = tag;
+  if (!archived) {
+    const btn = document.createElement('button');
+    btn.className = 'remove-tag';
+    btn.title = 'Remove tag';
+    btn.textContent = '×';
+    btn.addEventListener('click', () => {
+      manager.removeTag(taskId, tag);
+      render();
+    });
+    chip.appendChild(btn);
+  }
+  return chip;
+}
 
 render();

@@ -7,6 +7,7 @@ export class Task {
     this.title = title;
     this.intervals = []; // [{start: number, end?: number}]
     this.archived = false;
+    this.tags = [];
   }
 
   get isRunning() {
@@ -45,6 +46,8 @@ export class TaskManager {
     this.storage = storage;
     this.tasks = [];
     this.activeTaskId = null;
+    // Inverted index: tag -> array of taskIds
+    this.tagsIndex = {};
   }
 
   create(title) {
@@ -60,7 +63,11 @@ export class TaskManager {
     if (idx >= 0) {
       // if removing active, clear footer
       if (this.activeTaskId === id) this.activeTaskId = null;
-      this.tasks.splice(idx, 1);
+      const [removed] = this.tasks.splice(idx, 1);
+      // remove from tags index
+      if (removed && Array.isArray(removed.tags)) {
+        for (const tag of removed.tags) this._idxRemove(tag, removed.id);
+      }
       this.persist();
     }
   }
@@ -106,13 +113,65 @@ export class TaskManager {
 
   serialize() {
     return {
-      tasks: this.tasks.map(t => ({ id: t.id, title: t.title, intervals: t.intervals, archived: !!t.archived })),
+      tasks: this.tasks.map(t => ({ id: t.id, title: t.title, intervals: t.intervals, archived: !!t.archived, tags: Array.from(t.tags || []) })),
       activeTaskId: this.activeTaskId,
+      tagsIndex: this.tagsIndex,
     };
   }
 
   persist() {
     this.storage.save(this.serialize());
+  }
+
+  // Tag utilities
+  static _normTag(tag) {
+    return String(tag || '').trim().toLowerCase();
+  }
+
+  addTag(taskId, tag) {
+    const t = this.getById(taskId);
+    if (!t) return;
+    const norm = TaskManager._normTag(tag);
+    if (!norm) return;
+    if (!t.tags.includes(norm)) t.tags.push(norm);
+    this._idxAdd(norm, t.id);
+    this.persist();
+  }
+
+  removeTag(taskId, tag) {
+    const t = this.getById(taskId);
+    if (!t) return;
+    const norm = TaskManager._normTag(tag);
+    const i = t.tags.indexOf(norm);
+    if (i >= 0) t.tags.splice(i, 1);
+    this._idxRemove(norm, t.id);
+    this.persist();
+  }
+
+  getIdsByTag(tag) {
+    const norm = TaskManager._normTag(tag);
+    return Array.from(this.tagsIndex[norm] || []);
+  }
+
+  getTasksByTag(tag) {
+    const ids = this.getIdsByTag(tag);
+    return ids.map(id => this.getById(id)).filter(Boolean);
+  }
+
+  _idxAdd(tag, id) {
+    const norm = TaskManager._normTag(tag);
+    if (!norm) return;
+    if (!this.tagsIndex[norm]) this.tagsIndex[norm] = [];
+    if (!this.tagsIndex[norm].includes(id)) this.tagsIndex[norm].push(id);
+  }
+
+  _idxRemove(tag, id) {
+    const norm = TaskManager._normTag(tag);
+    const arr = this.tagsIndex[norm];
+    if (!arr) return;
+    const i = arr.indexOf(id);
+    if (i >= 0) arr.splice(i, 1);
+    if (arr.length === 0) delete this.tagsIndex[norm];
   }
 
   static revive(data) {
@@ -122,9 +181,15 @@ export class TaskManager {
       const t = new Task(raw.id, raw.title);
       t.intervals = (raw.intervals || []).map(itv => ({ start: itv.start, end: itv.end ?? undefined }));
       t.archived = !!raw.archived;
+      t.tags = Array.isArray(raw.tags) ? Array.from(new Set(raw.tags.map(TaskManager._normTag))) : [];
       mgr.tasks.push(t);
     }
     mgr.activeTaskId = data.activeTaskId || null;
+    // Rebuild index from tasks to ensure consistency
+    mgr.tagsIndex = {};
+    for (const t of mgr.tasks) {
+      for (const tag of t.tags) mgr._idxAdd(tag, t.id);
+    }
     return mgr;
   }
 }

@@ -86,6 +86,31 @@ body {
 .task-time { font-variant-numeric: tabular-nums; color: var(--muted); }
 .task-actions { display: flex; gap: 8px; }
 
+/* Tags */
+.tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; }
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #0e131a;
+  color: var(--muted);
+  font-size: 12px;
+}
+.tag .remove-tag {
+  background: transparent;
+  border: none;
+  color: #94a3b8;
+  cursor: pointer;
+}
+
+.input-tag {
+  background: #00000055;
+  border: 0;
+}
+
 .now-playing {
   position: fixed;
   left: 0; right: 0; bottom: 0;
