@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Watchman — Task Manager</title>
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Watchman</h1>
+    <p class="subtitle">Dark, simple task timer</p>
+  </header>
+
+  <main class="container">
+    <section class="add-task">
+      <input id="taskName" type="text" placeholder="Task name" />
+      <button id="addTaskBtn" class="btn primary">Add Task</button>
+    </section>
+
+    <section>
+      <ul id="taskList" class="task-list"></ul>
+    </section>
+  </main>
+
+  <footer id="nowPlaying" class="now-playing hidden" aria-live="polite">
+    <div class="np-info">
+      <span class="np-label">Running:</span>
+      <span id="npTitle" class="np-title">—</span>
+      <span id="npElapsed" class="np-elapsed">00:00:00</span>
+    </div>
+    <div class="np-actions">
+      <button id="npToggle" class="btn">Pause</button>
+    </div>
+  </footer>
+
+  <script type="module" src="./js/ui.js"></script>
+</body>
+</html>

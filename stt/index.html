@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Offline STT (Vosk WASM)</title>
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body>
+  <header class="app-header">
+    <h1>Offline STT</h1>
+    <p class="subtitle">Local transcription with Vosk (WASM)</p>
+  </header>
+
+  <main class="container">
+    <section class="controls">
+      <button id="recordBtn" class="btn primary">Record</button>
+      <button id="stopBtn" class="btn" disabled>Stop</button>
+      <span id="status" class="status">Idle</span>
+    </section>
+
+    <section>
+      <ul id="items" class="items"></ul>
+    </section>
+  </main>
+
+  <script type="module" src="./js/ui.js"></script>
+</body>
+</html>
