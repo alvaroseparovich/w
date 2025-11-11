@@ -5,6 +5,7 @@ const els = {
   addBtn: document.getElementById('addTaskBtn'),
   list: document.getElementById('taskList'),
   archiveList: document.getElementById('archiveList'),
+  tagFilter: document.getElementById('tagFilter'),
   tabActive: document.getElementById('tabActive'),
   tabArchive: document.getElementById('tabArchive'),
   panelActive: document.getElementById('panelActive'),
@@ -19,11 +20,16 @@ const storage = new LocalStorageDriver();
 const saved = storage.load();
 let manager = TaskManager.revive(saved);
 manager.storage = storage; // bind real storage
+let selectedTag = null;
 
 function render() {
+  // filter bar
+  renderFilter();
+
   // active list
   els.list.innerHTML = '';
-  for (const t of manager.activeTasks) {
+  const activeTasks = selectedTag ? manager.getTasksByTag(selectedTag).filter(t => !t.archived) : manager.activeTasks;
+  for (const t of activeTasks) {
     const li = document.createElement('li');
     li.className = 'task-item';
     li.dataset.id = t.id;
@@ -154,6 +160,24 @@ function onDelete(id) {
 function onArchive(id) {
   manager.archive(id);
   render();
+}
+
+function renderFilter() {
+  const tags = Object.keys(manager.tagsIndex).sort();
+  els.tagFilter.innerHTML = '';
+  // All chip
+  const all = document.createElement('span');
+  all.className = 'tag filter' + (!selectedTag ? ' selected' : '');
+  all.textContent = 'All';
+  all.addEventListener('click', () => { selectedTag = null; render(); });
+  els.tagFilter.appendChild(all);
+  for (const tag of tags) {
+    const chip = document.createElement('span');
+    chip.className = 'tag filter' + (selectedTag === tag ? ' selected' : '');
+    chip.textContent = tag;
+    chip.addEventListener('click', () => { selectedTag = (selectedTag === tag ? null : tag); render(); });
+    els.tagFilter.appendChild(chip);
+  }
 }
 
 // Footer controls

@@ -106,6 +106,16 @@ body {
   cursor: pointer;
 }
 
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+}
+.filter-label { color: var(--muted); font-size: 12px; }
+.tag.filter { cursor: pointer; }
+.tag.selected { outline: 2px solid var(--primary); color: var(--text); }
+
 .input-tag {
   background: #00000055;
   border: 0;
