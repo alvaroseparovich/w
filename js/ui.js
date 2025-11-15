@@ -24,7 +24,7 @@ let selectedTag = null;
 
 // --- Sync layer (minimal V1) ---
 const Sync = (() => {
-  const API_BASE = localStorage.getItem('auth_api_base') || 'http://localhost:4000';
+  const API_BASE = localStorage.getItem('auth_api_base') || 'https://oy4qoewlgir6gkd5jew452kaay0ffoed.lambda-url.us-east-1.on.aws'; // || 'http://localhost:4000';
   const LS_SYNC = 'watchman_last_sync_at';
   let debounceTimer = null;
 

@@ -20,6 +20,7 @@ destroy:
 
 build-lambdas:
 	bash $(TF_DIR)/lambdas/build.sh
+	bash auth-proxy/build.sh
 
 approve-user:
 	@if [ -z "$(PHONE)" ]; then echo "PHONE is required, e.g., make approve-user PHONE=+5511987792799"; exit 1; fi

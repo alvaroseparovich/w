@@ -7,7 +7,10 @@ import { DynamoDBDocumentClient, PutCommand, QueryCommand, DeleteCommand } from 
 import { createRemoteJWKSet, jwtVerify } from 'jose';
 
 const app = express();
-app.use(cors());
+// Enable CORS only for local server to avoid duplicate headers with Lambda Function URL CORS
+if (!process.env.LAMBDA_TASK_ROOT) {
+  app.use(cors());
+}
 app.use(bodyParser.json());
 
 const REGION = process.env.AWS_REGION || 'us-east-1';
