@@ -1,7 +1,7 @@
 // Proxy-based passwordless auth (phone + code) via backend/auth-proxy
 const Auth = (() => {
   const LS_KEY = 'watchman_auth';
-  const API_BASE = localStorage.getItem('auth_api_base') || 'http://localhost:4000';
+  const API_BASE = localStorage.getItem('auth_api_base') || 'https://oy4qoewlgir6gkd5jew452kaay0ffoed.lambda-url.us-east-1.on.aws'; //'http://localhost:4000';
 
   function save(session) {
     localStorage.setItem(LS_KEY, JSON.stringify(session));
