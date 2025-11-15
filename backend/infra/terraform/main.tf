@@ -85,10 +85,15 @@ resource "aws_lambda_function" "define_auth" {
 resource "aws_lambda_function" "create_auth" {
   function_name = "${local.name_prefix}-create-auth"
   role          = aws_iam_role.lambda_exec.arn
-  handler       = "index.handler"
-  runtime       = "nodejs20.x"
+  handler       = "index.lambda_handler"
+  runtime       = "python3.12"
   filename      = "${path.module}/lambdas/create-auth.zip"
   source_code_hash = filebase64sha256("${path.module}/lambdas/create-auth.zip")
+  environment {
+    variables = {
+      OTP_TTL_MINUTES = var.otp_ttl_minutes
+    }
+  }
 }
 
 resource "aws_lambda_function" "verify_auth" {

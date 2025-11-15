@@ -6,11 +6,13 @@ export EP="https://cognito-idp.${REGION}.amazonaws.com"
 
 
 function signup() {
-curl --aws-sigv4 "aws:amz:${REGION}:cognito-idp" \
-  -H "Content-Type: application/x-amz-json-1.1" \
-  -H "X-Amz-Target: AWSCognitoIdentityProviderService.SignUp" \
-  -d "{\"ClientId\":\"${CLIENT_ID}\",\"Username\":\"${PHONE}\",\"Password\":\"Dummy-Password1!\",\"UserAttributes\":[{\"Name\":\"phone_number\",\"Value\":\"${PHONE}\"}]}" \
-  "${EP}"
+  local phone="$1"
+
+  curl --aws-sigv4 "aws:amz:${REGION}:cognito-idp" \
+    -H "Content-Type: application/x-amz-json-1.1" \
+    -H "X-Amz-Target: AWSCognitoIdentityProviderService.SignUp" \
+    -d "{\"ClientId\":\"${CLIENT_ID}\",\"Username\":\"${phone}\",\"Password\":\"Dummy-Password1!\",\"UserAttributes\":[{\"Name\":\"phone_number\",\"Value\":\"${phone}\"}]}" \
+    "${EP}"
 }
 
 function confirm() {
@@ -22,25 +24,31 @@ function confirm() {
 }
 
 function login() {
+  local phone="$1"
+
   SESSION=$(curl --aws-sigv4 "aws:amz:${REGION}:cognito-idp" \
   -H "Content-Type: application/x-amz-json-1.1" \
   -H "X-Amz-Target: AWSCognitoIdentityProviderService.InitiateAuth" \
-  -d "{\"AuthFlow\":\"CUSTOM_AUTH\",\"ClientId\":\"${CLIENT_ID}\",\"AuthParameters\":{\"USERNAME\":\"${PHONE}\"}}" \
+  -d "{\"AuthFlow\":\"CUSTOM_AUTH\",\"ClientId\":\"${CLIENT_ID}\",\"AuthParameters\":{\"USERNAME\":\"${phone}\"}}" \
   "${EP}" | jq -r .Session)
 }
 
 function challenge() {
+  local code="$1"
+
   curl --aws-sigv4 "aws:amz:${REGION}:cognito-idp" \
   -H "Content-Type: application/x-amz-json-1.1" \
   -H "X-Amz-Target: AWSCognitoIdentityProviderService.RespondToAuthChallenge" \
-  -d "{\"ChallengeName\":\"CUSTOM_CHALLENGE\",\"ClientId\":\"${CLIENT_ID}\",\"Session\":\"${SESSION}\",\"ChallengeResponses\":{\"USERNAME\":\"${PHONE}\",\"ANSWER\":\"123456\"}}" \
+  -d "{\"ChallengeName\":\"CUSTOM_CHALLENGE\",\"ClientId\":\"${CLIENT_ID}\",\"Session\":\"${SESSION}\",\"ChallengeResponses\":{\"USERNAME\":\"${PHONE}\",\"ANSWER\":\"${code}\"}}" \
   "${EP}"
 }
 
 function refresh() {
+  local refresh_token="$1"
+
   curl --aws-sigv4 "aws:amz:${REGION}:cognito-idp" \
   -H "Content-Type: application/x-amz-json-1.1" \
   -H "X-Amz-Target: AWSCognitoIdentityProviderService.InitiateAuth" \
-  -d "{\"AuthFlow\":\"REFRESH_TOKEN_AUTH\",\"ClientId\":\"${CLIENT_ID}\",\"AuthParameters\":{\"REFRESH_TOKEN\":\"${REFRESH_TOKEN}\"}}" \
+  -d "{\"AuthFlow\":\"REFRESH_TOKEN_AUTH\",\"ClientId\":\"${CLIENT_ID}\",\"AuthParameters\":{\"REFRESH_TOKEN\":\"${refresh_token}\"}}" \
   "${EP}"
 }
