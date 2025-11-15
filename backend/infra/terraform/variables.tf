@@ -27,3 +27,26 @@ variable "otp_ttl_minutes" {
   type        = number
   default     = 10
 }
+
+variable "cognito_domain_prefix" {
+  description = "Cognito Hosted UI domain prefix (must be globally unique per region)"
+  type        = string
+  default     = "what-call-recorder-dev"
+}
+
+variable "redirect_signin_urls" {
+  description = "Allowed redirect URIs for sign-in"
+  type        = list(string)
+  default     = [
+    "http://localhost:8080/",
+    "http://localhost:8080/index.html"
+  ]
+}
+
+variable "redirect_signout_urls" {
+  description = "Allowed redirect URIs for sign-out"
+  type        = list(string)
+  default     = [
+    "http://localhost:8080/"
+  ]
+}

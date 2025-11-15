@@ -162,6 +162,19 @@ resource "aws_cognito_user_pool_client" "client" {
     id_token      = "hours"
     refresh_token = "hours"
   }
+
+  callback_urls = var.redirect_signin_urls
+  logout_urls   = var.redirect_signout_urls
+  supported_identity_providers = ["COGNITO"]
+  allowed_oauth_flows_user_pool_client = true
+  allowed_oauth_flows  = ["code", "implicit"]
+  allowed_oauth_scopes = ["openid", "email", "phone", "profile"]
+}
+
+# Hosted UI domain
+resource "aws_cognito_user_pool_domain" "domain" {
+  domain       = var.cognito_domain_prefix
+  user_pool_id = aws_cognito_user_pool.pool.id
 }
 
 output "user_pool_id" {

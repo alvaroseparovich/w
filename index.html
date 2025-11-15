@@ -5,11 +5,27 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Watchman — Task Manager</title>
   <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/auth.css" />
 </head>
 <body>
   <header class="app-header">
     <h1>Watchman</h1>
     <p class="subtitle">Dark, simple task timer</p>
+    <div id="authBar" class="auth-bar">
+      <div id="authControls" class="auth-controls">
+        <input id="authPhone" type="tel" placeholder="+5511..." class="auth-input" />
+        <button id="authLoginBtn" class="btn">Login</button>
+        <div id="authCodeRow" class="auth-code-row hidden">
+          <input id="authCode" type="text" placeholder="Code" class="auth-input small" />
+          <button id="authConfirmBtn" class="btn">Confirm</button>
+        </div>
+        <span id="authStatus" class="auth-status"></span>
+      </div>
+      <div id="authLogged" class="auth-logged hidden">
+        <span class="auth-user" id="authUser"></span>
+        <button id="authLogout" class="btn">Exit</button>
+      </div>
+    </div>
   </header>
 
   <main class="container">
@@ -47,5 +63,6 @@
   </footer>
 
   <script type="module" src="./js/ui.js"></script>
+  <script src="./js/auth.js"></script>
 </body>
 </html>

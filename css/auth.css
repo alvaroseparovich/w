@@ -1,0 +1,9 @@
+.auth-bar{position:absolute;right:16px;top:12px;display:flex;gap:8px;align-items:center}
+.auth-controls{display:flex;gap:8px;align-items:center}
+.auth-input{padding:6px 8px;border:1px solid #444;background:#222;color:#eee;border-radius:4px}
+.auth-input.small{width:90px}
+.auth-code-row{display:flex;gap:6px;align-items:center}
+.auth-status{margin-left:8px;color:#aaa;font-size:12px}
+.auth-logged{display:flex;gap:8px;align-items:center}
+.auth-user{color:#ddd}
+.hidden{display:none}
