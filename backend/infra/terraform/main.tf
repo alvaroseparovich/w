@@ -181,6 +181,28 @@ output "user_pool_id" {
   value = aws_cognito_user_pool.pool.id
 }
 
+# DynamoDB table for tasks sync
+resource "aws_dynamodb_table" "tasks" {
+  name         = "${local.name_prefix}-tasks"
+  billing_mode = "PAY_PER_REQUEST"
+
+  hash_key = "pk"
+  range_key = "sk"
+
+  attribute {
+    name = "pk"
+    type = "S"
+  }
+  attribute {
+    name = "sk"
+    type = "S"
+  }
+}
+
+output "tasks_table_name" {
+  value = aws_dynamodb_table.tasks.name
+}
+
 # Allow Cognito to invoke each Lambda trigger
 resource "aws_lambda_permission" "allow_define_auth" {
   statement_id  = "AllowExecutionFromCognitoDefineAuth"
