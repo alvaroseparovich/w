@@ -1,0 +1,9 @@
+{
+  "UserPoolClients": [
+    {
+      "ClientId": "4qih2ggplpt8nsotuceodnegui",
+      "UserPoolId": "us-east-1_zStRjxVjg",
+      "ClientName": "what-call-recorder-dev-client"
+    }
+  ]
+}

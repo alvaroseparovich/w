@@ -162,3 +162,44 @@ resource "aws_cognito_user_pool_client" "client" {
 output "user_pool_id" {
   value = aws_cognito_user_pool.pool.id
 }
+
+# Allow Cognito to invoke each Lambda trigger
+resource "aws_lambda_permission" "allow_define_auth" {
+  statement_id  = "AllowExecutionFromCognitoDefineAuth"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.define_auth.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.pool.arn
+}
+
+resource "aws_lambda_permission" "allow_create_auth" {
+  statement_id  = "AllowExecutionFromCognitoCreateAuth"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.create_auth.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.pool.arn
+}
+
+resource "aws_lambda_permission" "allow_verify_auth" {
+  statement_id  = "AllowExecutionFromCognitoVerifyAuth"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.verify_auth.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.pool.arn
+}
+
+resource "aws_lambda_permission" "allow_pre_signup" {
+  statement_id  = "AllowExecutionFromCognitoPreSignup"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.pre_signup.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.pool.arn
+}
+
+resource "aws_lambda_permission" "allow_pre_token_gen" {
+  statement_id  = "AllowExecutionFromCognitoPreTokenGen"
+  action        = "lambda:InvokeFunction"
+  function_name = aws_lambda_function.pre_token_gen.function_name
+  principal     = "cognito-idp.amazonaws.com"
+  source_arn    = aws_cognito_user_pool.pool.arn
+}
