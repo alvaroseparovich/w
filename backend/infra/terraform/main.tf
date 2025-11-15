@@ -260,7 +260,7 @@ resource "aws_lambda_function_url" "auth_proxy_url" {
   cors {
     allow_headers     = ["*"]
     allow_methods     = ["GET", "POST"]
-    allow_origins     = ["http://localhost:8080"]
+    allow_origins     = ["http://localhost:8080", "https://alvaroseparovich.github.io"]
     allow_credentials = false
   }
 }
