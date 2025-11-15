@@ -136,8 +136,6 @@ resource "aws_cognito_user_pool" "pool" {
     required            = true
     mutable             = true
   }
-
-  auto_verified_attributes = ["phone_number"]
 }
 
 resource "aws_cognito_user_pool_client" "client" {
