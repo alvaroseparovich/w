@@ -149,4 +149,9 @@ app.post('/tasks/delete', async (req, res) => {
 });
 
 const port = process.env.PORT || 4000;
-app.listen(port, () => console.log(`Auth proxy listening on :${port}`));
+// Only listen locally when not running inside Lambda
+if (!process.env.LAMBDA_TASK_ROOT) {
+  app.listen(port, () => console.log(`Auth proxy listening on :${port}`));
+}
+
+export default app;

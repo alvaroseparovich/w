@@ -107,6 +107,8 @@ window.addEventListener('DOMContentLoaded', () => {
       const s = await Auth.respond(code);
       statusEl.textContent = 'Logged in';
       setLoggedIn(s.phone);
+      // notify listeners (e.g., sync layer)
+      window.dispatchEvent(new CustomEvent('auth:login', { detail: s }));
     } catch (e) {
       statusEl.textContent = 'Invalid code';
       console.error(e);
@@ -116,5 +118,6 @@ window.addEventListener('DOMContentLoaded', () => {
   logoutBtn?.addEventListener('click', () => {
     Auth.clear();
     setLoggedOut();
+    window.dispatchEvent(new Event('auth:logout'));
   });
 });

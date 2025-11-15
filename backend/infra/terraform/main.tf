@@ -203,6 +203,73 @@ output "tasks_table_name" {
   value = aws_dynamodb_table.tasks.name
 }
 
+# Auth proxy Lambda (Express on Lambda)
+resource "aws_iam_role" "auth_proxy_lambda" {
+  name               = "${local.name_prefix}-auth-proxy-lambda"
+  assume_role_policy = data.aws_iam_policy_document.lambda_assume_role.json
+}
+
+resource "aws_iam_role_policy_attachment" "auth_proxy_logs" {
+  role       = aws_iam_role.auth_proxy_lambda.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+
+data "aws_iam_policy_document" "auth_proxy_ddb" {
+  statement {
+    actions = [
+      "dynamodb:PutItem",
+      "dynamodb:UpdateItem",
+      "dynamodb:DeleteItem",
+      "dynamodb:GetItem",
+      "dynamodb:Query",
+      "dynamodb:BatchWriteItem"
+    ]
+    resources = [aws_dynamodb_table.tasks.arn]
+  }
+}
+
+resource "aws_iam_policy" "auth_proxy_ddb" {
+  name   = "${local.name_prefix}-auth-proxy-ddb"
+  policy = data.aws_iam_policy_document.auth_proxy_ddb.json
+}
+
+resource "aws_iam_role_policy_attachment" "auth_proxy_ddb_attach" {
+  role       = aws_iam_role.auth_proxy_lambda.name
+  policy_arn = aws_iam_policy.auth_proxy_ddb.arn
+}
+
+resource "aws_lambda_function" "auth_proxy" {
+  function_name = "${local.name_prefix}-auth-proxy"
+  role          = aws_iam_role.auth_proxy_lambda.arn
+  handler       = "lambda-handler.handler"
+  runtime       = "nodejs20.x"
+  filename      = "${path.module}/../../auth-proxy/build/auth-proxy.zip"
+  source_code_hash = filebase64sha256("${path.module}/../../auth-proxy/build/auth-proxy.zip")
+  environment {
+    variables = {
+      AWS_REGION         = var.aws_region
+      USER_POOL_ID       = aws_cognito_user_pool.pool.id
+      COGNITO_CLIENT_ID  = aws_cognito_user_pool_client.client.id
+      TABLE_NAME         = aws_dynamodb_table.tasks.name
+    }
+  }
+}
+
+resource "aws_lambda_function_url" "auth_proxy_url" {
+  function_name      = aws_lambda_function.auth_proxy.function_name
+  authorization_type = "NONE"
+  cors {
+    allow_headers     = ["*"]
+    allow_methods     = ["GET", "POST", "OPTIONS"]
+    allow_origins     = ["http://localhost:8080"]
+    allow_credentials = false
+  }
+}
+
+output "auth_proxy_url" {
+  value = aws_lambda_function_url.auth_proxy_url.function_url
+}
+
 # Allow Cognito to invoke each Lambda trigger
 resource "aws_lambda_permission" "allow_define_auth" {
   statement_id  = "AllowExecutionFromCognitoDefineAuth"

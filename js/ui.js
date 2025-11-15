@@ -22,6 +22,105 @@ let manager = TaskManager.revive(saved);
 manager.storage = storage; // bind real storage
 let selectedTag = null;
 
+// --- Sync layer (minimal V1) ---
+const Sync = (() => {
+  const API_BASE = localStorage.getItem('auth_api_base') || 'http://localhost:4000';
+  const LS_SYNC = 'watchman_last_sync_at';
+  let debounceTimer = null;
+
+  function getIdToken() {
+    try {
+      const s = JSON.parse(localStorage.getItem('watchman_auth') || 'null');
+      return s?.idToken || null;
+    } catch { return null; }
+  }
+
+  function lastSyncAt() {
+    return Number(localStorage.getItem(LS_SYNC) || '0');
+  }
+  function setLastSyncAt(ms) {
+    localStorage.setItem(LS_SYNC, String(ms));
+  }
+
+  async function downloadSince(ms) {
+    const idToken = getIdToken();
+    if (!idToken) return;
+    const url = `${API_BASE}/sync/download?since=${encodeURIComponent(ms || 0)}`;
+    const resp = await fetch(url, { headers: { 'Authorization': `Bearer ${idToken}` } });
+    if (!resp.ok) throw new Error('download_failed');
+    const data = await resp.json();
+    mergeServerTasks(data.tasks || []);
+    setLastSyncAt(Date.now());
+  }
+
+  function mergeServerTasks(items) {
+    if (!Array.isArray(items)) return;
+    // newer-wins by updatedAt
+    for (const it of items) {
+      const existing = manager.getById(it.id);
+      if (!existing) {
+        const t = manager.create(it.title || '');
+        t.id = it.id; // preserve id
+        t.intervals = it.intervals || [];
+        t.archived = !!it.archived;
+        t.tags = Array.isArray(it.tags) ? Array.from(new Set(it.tags)) : [];
+      } else {
+        // naive: replace fields
+        existing.title = it.title || existing.title;
+        existing.intervals = it.intervals || existing.intervals;
+        existing.archived = !!it.archived;
+        existing.tags = Array.isArray(it.tags) ? Array.from(new Set(it.tags)) : existing.tags;
+      }
+    }
+    manager.persist();
+    render();
+
+// Kick initial download after login, or if already logged
+window.addEventListener('auth:login', () => {
+  Sync.downloadSince(0).catch(console.error);
+});
+// Try background download on load if token exists
+(() => {
+  try {
+    const s = JSON.parse(localStorage.getItem('watchman_auth') || 'null');
+    if (s?.idToken) {
+      Sync.downloadSince(Sync.lastSyncAt ? Sync.lastSyncAt() : 0)?.catch?.(console.error);
+    }
+  } catch {}
+})();
+
+  }
+
+  async function uploadAll() {
+    const idToken = getIdToken();
+    if (!idToken) return;
+    const payload = manager.serialize();
+    // decorate with updatedAt/version for V1 (client-generated)
+    const tasks = (payload.tasks || []).map(t => ({
+      id: t.id,
+      title: t.title,
+      intervals: t.intervals,
+      archived: !!t.archived,
+      tags: t.tags || [],
+      updatedAt: Date.now(),
+      version: 0,
+    }));
+    await fetch(`${API_BASE}/sync/upload`, {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${idToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tasks })
+    });
+    setLastSyncAt(Date.now());
+  }
+
+  function scheduleUpload() {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(() => { uploadAll().catch(console.error); }, 1200);
+  }
+
+  return { downloadSince, scheduleUpload };
+})();
+
 // Media Session support for OS-level play/pause notification
 const mediaCtrl = {
   audio: null,
@@ -129,6 +228,7 @@ function render() {
           manager.addTag(t.id, v);
           tagInput.value = '';
           render();
+          Sync.scheduleUpload();
         }
       }
     });
@@ -245,26 +345,31 @@ function onAdd() {
   manager.create(name);
   els.name.value = '';
   render();
+  Sync.scheduleUpload();
 }
 
 function onToggle(id) {
   manager.toggleRun(id);
   render();
+  Sync.scheduleUpload();
 }
 
 function onDelete(id) {
   manager.remove(id);
   render();
+  Sync.scheduleUpload();
 }
 
 function onArchive(id) {
   manager.archive(id);
   render();
+  Sync.scheduleUpload();
 }
 
 function onUnarchive(id) {
   manager.unarchive(id);
   render();
+  Sync.scheduleUpload();
 }
 
 function renderFilter() {
@@ -341,6 +446,7 @@ function renderTagChip(taskId, tag, archived = false) {
     btn.addEventListener('click', () => {
       manager.removeTag(taskId, tag);
       render();
+      Sync.scheduleUpload();
     });
     chip.appendChild(btn);
   }
