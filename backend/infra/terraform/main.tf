@@ -247,7 +247,6 @@ resource "aws_lambda_function" "auth_proxy" {
   source_code_hash = filebase64sha256("${path.module}/../../auth-proxy/build/auth-proxy.zip")
   environment {
     variables = {
-      AWS_REGION         = var.aws_region
       USER_POOL_ID       = aws_cognito_user_pool.pool.id
       COGNITO_CLIENT_ID  = aws_cognito_user_pool_client.client.id
       TABLE_NAME         = aws_dynamodb_table.tasks.name
@@ -260,7 +259,7 @@ resource "aws_lambda_function_url" "auth_proxy_url" {
   authorization_type = "NONE"
   cors {
     allow_headers     = ["*"]
-    allow_methods     = ["GET", "POST", "OPTIONS"]
+    allow_methods     = ["GET", "POST"]
     allow_origins     = ["http://localhost:8080"]
     allow_credentials = false
   }
